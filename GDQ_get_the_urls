@@ -1,0 +1,21 @@
+def get_the_urls():
+    import pandas as pd
+    from bs4 import BeautifulSoup
+    import requests
+    full_list = []
+    for x in range(1, 88):
+        url = "https://gamesdonequick.com/tracker/donations/?page={}".format(x)
+        page = requests.get(url)
+        print(page.url)
+        soup = BeautifulSoup(page.content, 'html.parser')
+        donation_tags = soup.find_all('tr', 'a', class_="")
+        donations = [dt.get_text() for dt in donation_tags]
+        donation_list = [i.strip() for i in donations]
+        donation_list2 = [i.splitlines() for i in donation_list]
+        df = pd.DataFrame(donation_list2)
+        full_list.append(df)
+    full_list = pd.concat(full_list)
+    full_list.to_csv(path_or_buf="page_2.csv")
+
+
+get_the_urls()
