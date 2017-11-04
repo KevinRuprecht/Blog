@@ -1,0 +1,27 @@
+def merge_the_files():
+    import pandas as pd
+    import pandasql as ps
+    donations = pd.read_csv("page_3.csv", encoding='latin-1')
+    games = pd.read_csv("AGDQRunsAllTime.csv", encoding='latin-1')
+    donations['TimeReceivedAscDsc4'] = pd.to_datetime(donations.TimeReceivedAscDsc4, format='%m/%d/%Y %H:%M:%S',
+                                                      infer_datetime_format=True)
+    games['StartTime'] = pd.to_datetime(games.StartTime)
+    games['EndTime'] = pd.to_datetime(games.EndTime)
+    donations = donations.assign(key=1)
+    games = games.assign(key=1)
+    sqlcode = '''
+    select *
+    from donations
+    left outer join games on donations.key = games.key
+    where donations.TimeReceivedAscDsc4 >= games.StartTime and donations.TimeReceivedAscDsc4 < games.EndTime
+    UNION ALL
+    select *
+    from donations
+    left outer join games on donations.TimeReceivedAscDsc4 = games.Name
+    where donations.TimeReceivedAscDsc4 not in (select donations.TimeReceivedAscDsc4
+    from donations
+    left outer join games on games.key = donations.key
+    where donations.TimeReceivedAscDsc4 >= games.StartTime and donations.TimeReceivedAscDsc4 < games.EndTime)
+    '''
+    newdf = ps.sqldf(sqlcode, locals())
+    newdf.to_csv(path_or_buf="AGDQ_merged_data_2.csv")
